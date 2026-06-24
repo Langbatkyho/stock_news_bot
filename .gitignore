@@ -1,0 +1,10 @@
+# Local gitignore for stock_news_bot
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+logs/
+cache/local_news_cache.json
+vnnews_cache.db
+temp_*.csv
