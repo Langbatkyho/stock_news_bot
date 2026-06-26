@@ -6,7 +6,7 @@ from analyzer.prompts import build_company_prompt, build_industry_prompt, build_
 from models.schemas import CategorySummarySchema, ArticleAnalysisSchema
 
 try:
-    import google.generativeai as genai
+    from google import genai
     import instructor
 except ImportError:
     genai = None
@@ -20,7 +20,7 @@ class AIAnalyzer:
         self.current_key_index = 0
         self.model = model
         self.client = None
-        self.genai_model = None
+        self.genai_client = None
         self._init_client()
 
     def _init_client(self):
@@ -28,13 +28,13 @@ class AIAnalyzer:
             key = self.api_keys[self.current_key_index]
             masked_key = key[:6] + "..." + key[-4:] if len(key) > 10 else "..."
             logger.info(f"Khởi tạo Gemini Client với API Key: {masked_key} (Vị trí: {self.current_key_index + 1}/{len(self.api_keys)})")
-            genai.configure(api_key=key)
-            self.genai_model = genai.GenerativeModel(model_name=self.model)
-            self.client = instructor.from_gemini(
-                client=self.genai_model
+            self.genai_client = genai.Client(api_key=key)
+            self.client = instructor.from_genai(
+                client=self.genai_client,
+                mode=instructor.Mode.GEMINI_JSON,
             )
         else:
-            logger.warning("Thư viện google-generativeai hoặc instructor chưa được cài đặt hoặc thiếu API Key.")
+            logger.warning("Thư viện google-genai hoặc instructor chưa được cài đặt hoặc thiếu API Key.")
             self.client = None
 
     def rotate_key(self) -> bool:
@@ -62,6 +62,7 @@ class AIAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     response_model=ArticleAnalysisSchema,
                     max_retries=3
@@ -118,6 +119,7 @@ class AIAnalyzer:
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     response_model=CategorySummarySchema,
                     max_retries=3, # Validator feedback loop: instructor sẽ tự động trả lỗi cho LLM tự sửa
