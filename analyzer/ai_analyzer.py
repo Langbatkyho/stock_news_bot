@@ -31,7 +31,7 @@ class AIAnalyzer:
             self.genai_client = genai.Client(api_key=key)
             self.client = instructor.from_genai(
                 client=self.genai_client,
-                mode=instructor.Mode.GEMINI_JSON,
+                mode=instructor.Mode.JSON,
             )
         else:
             logger.warning("Thư viện google-genai hoặc instructor chưa được cài đặt hoặc thiếu API Key.")
